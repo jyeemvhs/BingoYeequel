@@ -1,0 +1,490 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <title>Bingo</title>
+    <meta charset="utf-8"/>
+    <style type="text/css">
+
+    </style>
+    <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+
+
+
+<script type="text/javascript">
+
+let globalVal =-1;
+    let NUM_ROWS_CAGE = 5;
+    let NUM_COLUMNS_CAGE = 15;
+    let NUM_VALUES_PER_ROW = NUM_COLUMNS_CAGE;
+    
+    
+    let numBalls = NUM_VALUES_PER_ROW*NUM_ROWS_CAGE;
+    let cageReverse = [];
+    let winnerName1 = "";
+    let winnerName2 = "";
+    let winnerName3 = "";
+    let winnerName4 = "";
+//    let totalMessage = "";
+
+    for (let i=0;i<numBalls;i++) {
+        cageReverse[i] = 0;
+    }
+
+//    let mostRecentBall = -1;
+    let numActivePlayers = 0;
+
+    let howMany = 1;
+    let numbers=[];
+
+    let NUM_ROWS_CARD = 5;
+    let NUM_COLUMNS_CARD = 5;  
+
+polling();
+
+function polling() {
+    $.get("/info2",{index:4,identifier:0},successInfo2);
+
+    let numMilliSeconds = 1000;   // 1000 milliseconds = 1 second
+    setTimeout(polling, numMilliSeconds);
+}
+function successInfo2(data) {
+    if (!data)
+        alert("ERROR");
+    else {
+        if (data.val == 4) {
+            winnerName1 = data.winnerName1;
+            winnerName2 = data.winnerName2;
+            winnerName3 = data.winnerName3;
+            winnerName4 = data.winnerName4;
+
+            numActivePlayers = data.numActivePlayers;
+
+//            $("#comments").val("");
+//            $("#comments").val(data.message);
+        }
+    }
+}
+
+
+window.addEventListener('load', eventWindowLoaded, false);
+
+function eventWindowLoaded() {
+   canvasApp();
+}
+
+function Create2DArray(rows) {
+  var arr = [];
+
+  for (var i=0;i<rows;i++) {
+     arr[i] = [];
+  }
+
+  return arr;
+}
+
+
+function canvasApp(){
+
+    var theCanvas = document.getElementById("canvas");
+    theCanvas.addEventListener("mousemove",onMouseMove,false);
+    theCanvas.addEventListener("click",onMouseClick,false);
+
+    if (!theCanvas || !theCanvas.getContext) {
+        return;
+    }
+
+
+    var context = theCanvas.getContext("2d");
+
+    if (!context) {
+        return;
+    }
+
+   //canvasApp level variables
+    var keyPressList = [];
+    var windowWidth = 788;
+    var windowHeight = 200;
+    var mouseX = 0;
+    var mouseY = 0;
+
+
+    reset();
+
+    gameLoop();
+
+///////////////////////////////////////////////////////
+    function gameLoop()
+    {
+        var FRAME_RATE = 10;
+        var intervalTime = 1000/FRAME_RATE;
+
+        input();
+        paint();
+        animate();
+        window.setTimeout(gameLoop, intervalTime);
+    }
+
+    document.onkeydown = function(e){
+        e = e?e:window.event;
+        keyPressList[e.keyCode] = true;
+    }
+
+    document.onkeyup = function(e){
+        e = e?e:window.event;
+        keyPressList[e.keyCode] = false;
+    };
+
+///////////////////////////////////////////////////////
+    function onMouseMove(e)
+    {
+
+    }
+    function onMouseClick(e)
+    {
+
+    }
+    function input()
+    {
+// Tab:9 Enter:13 Space:32 0:48 A:65 a:97 Delete:127
+        if (keyPressList[27]==true){
+        //Escape
+            reset();
+        }
+
+        if (keyPressList[37]==true) {
+        //Left arrow
+        }
+
+        if (keyPressList[38]==true) {
+        //Up arrow
+        }
+
+        if (keyPressList[39]==true) {
+        //Right arrow
+        }
+        if (keyPressList[40]==true) {
+        //Down arrow
+        }
+    }
+
+    function paint()
+    {
+// draw background
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, getWidth2(), getHeight2());
+        context.strokeStyle = '#000000';
+        context.strokeRect(0, 0, getWidth2(), getHeight2());
+
+//horizontal lines
+        context.save(); //save current state in stack
+        context.setTransform(1,0,0,1,0,0);
+
+        let height = Math.floor(getHeight2()*8/10);
+        let width = Math.floor(getWidth2()*14/15);
+        let xoffset = Math.floor(getWidth2()/15);
+        let yoffset = 0;
+        
+        let ydelta = Math.floor(height/NUM_ROWS_CAGE);
+        let xdelta = Math.floor(width/NUM_COLUMNS_CAGE);
+
+        
+//Draw the grid.        
+
+        context.fillStyle = "rgb(0,0,0)";
+        for (let zi = 0;zi<NUM_ROWS_CAGE+1;zi++)
+        {
+            context.beginPath();
+            context.moveTo(getX(xoffset)+0,getY(yoffset)+zi*ydelta);
+            context.lineTo(getX(xoffset)+width,getY(yoffset)+zi*ydelta);
+            context.stroke();
+            context.closePath();             
+        }
+        
+        for (let zi = 0;zi<NUM_COLUMNS_CAGE+1;zi++)
+        {
+            context.beginPath();
+            context.moveTo(getX(xoffset)+zi*xdelta,getY(yoffset)+0);
+            context.lineTo(getX(xoffset)+zi*xdelta,getY(yoffset)+height);
+            context.stroke();
+            context.closePath();             
+        }
+        
+         
+        
+////////
+
+        let index = 0;
+        
+        for (let zrow=0;zrow<NUM_ROWS_CAGE;zrow++)
+        {
+            for (let zcol=0;zcol<NUM_COLUMNS_CAGE;zcol++)        
+            {
+                if (cageReverse[index] == 1) {
+                    
+                    let recent = false;
+                    for (let j=0;j < howMany;j++) {
+                        if (index == numbers[j]-1)
+                            recent = true;
+                    }
+                    if (recent)
+//                    if (mostRecentBall == index)
+                        context.fillStyle = "rgb(255,255,0)";
+                    else
+                        context.fillStyle = "rgb(155,155,155)";
+                    
+
+                    context.beginPath();
+                    context.fillRect(getX(xoffset)+zcol*xdelta, getY(yoffset)+zrow*ydelta, xdelta, ydelta);
+                    context.closePath(); 
+
+                }
+
+                index++;
+            }
+        }        
+  
+
+        
+        let count = 1;
+        let rowLoc = ydelta-3;
+        let bingoLetters = ["B","I","N","G","O"];
+        for (let row=0;row<NUM_ROWS_CAGE;row++) {
+          context.beginPath();
+          context.fillStyle = "rgb(0,0,0)";
+          context.strokeStyle = '#000000';
+          context.font = (ydelta-3) + 'px Arial';
+          context.textBaseline = 'bottom';
+          context.fillText  (bingoLetters[row],getX(xoffset)-xdelta ,getY(yoffset)+rowLoc);
+          context.closePath();            
+  
+            
+            let colLoc = 4;
+            for (let col=0;col<NUM_COLUMNS_CAGE;col++) {
+
+          context.beginPath();
+          context.fillStyle = "rgb(0,0,0)";
+          context.strokeStyle = '#000000';
+          context.font = (ydelta-3) + 'px Arial';
+          context.textBaseline = 'bottom';
+          context.fillText  ("" + count,getX(xoffset)+colLoc ,getY(yoffset)+rowLoc);
+          context.closePath();
+                count++;
+                colLoc += xdelta;
+            }
+            rowLoc += ydelta;
+        }
+        
+
+        if (winnerName1 != "") 
+        {
+          context.beginPath();
+          context.fillStyle = "rgb(0,0,0)";
+          context.strokeStyle = '#000000';
+          context.font = (ydelta-3) + 'px Arial';
+          context.textBaseline = 'bottom';
+          context.fillText  ("1. " + winnerName1,getX(0) ,getY(yoffset)+ydelta*6);          
+          context.closePath();            
+        }
+        if (winnerName2 != "") 
+        {
+          context.beginPath();
+          context.fillStyle = "rgb(0,0,0)";
+          context.strokeStyle = '#000000';
+          context.font = (ydelta-3) + 'px Arial';
+          context.textBaseline = 'bottom';
+          context.fillText  ("2. " + winnerName2,getX(4*xdelta),getY(yoffset)+ydelta*6);          
+          context.closePath();            
+        }
+        if (winnerName3 != "") 
+        {
+          context.beginPath();
+          context.fillStyle = "rgb(0,0,0)";
+          context.strokeStyle = '#000000';
+          context.font = (ydelta-3) + 'px Arial';
+          context.textBaseline = 'bottom';
+          context.fillText  ("3. " + winnerName3,getX(8*xdelta) ,getY(yoffset)+ydelta*6);          
+          context.closePath();            
+        }
+        if (winnerName4 != "") 
+        {
+          context.beginPath();
+          context.fillStyle = "rgb(0,0,0)";
+          context.strokeStyle = '#000000';
+          context.font = (ydelta-3) + 'px Arial';
+          context.textBaseline = 'bottom';
+          context.fillText  ("4. " + winnerName4,getX(12*xdelta) ,getY(yoffset)+ydelta*6);          
+          context.closePath();            
+        }        
+
+        if (winnerName1 == "") {
+          context.beginPath();
+          context.fillStyle = "rgb(0,0,0)";
+          context.strokeStyle = '#000000';
+          context.font = (ydelta-10) + 'px Arial';
+          context.textBaseline = 'bottom';
+          context.fillText  ("" + numActivePlayers + " Players",getX(xoffset) ,getY(yoffset+6*ydelta));
+          context.closePath();  
+        }
+
+        context.restore(); 
+    }
+
+    function reset()
+    {
+    }
+    function animate()
+    {
+    }
+////////////////////////////////////////////////////////
+    function getX(x)
+    {
+        return(x);
+    }
+    function getY(y)
+    {
+        return(y);
+    }
+    function getYNormal(y)
+    {
+        return(windowHeight-y);
+    }
+    function getWidth2()
+    {
+        return(windowWidth);
+    }
+    function getHeight2()
+    {
+        return(windowHeight);
+    }
+}
+
+</script>
+
+
+
+  </head>
+  
+  <body>  
+        <h1>GAME CALLER</h1>
+        <label for="code" style="font-size: 16pt">Code:</label>
+        <input id="code" type="text" name="code" value="" size="8" maxlength="7" style="font-size: 14pt">
+
+        <br>        
+        <input type="button" value="Reset" onclick="msgReset()">
+
+        <label for="gameType">Game Type</label>
+        <select id="gameType" name="gameType">
+            <option value="Regular">Regular</option>
+            <option value="4 Corners">4 Corners</option>
+            <option value="Ox">Tiger</option>
+            <option value="2021">2022</option>
+            <option value="ChunHoon">ChunHoon</option>
+        </select>           
+
+        <label for="howMany">How Many:</label>
+        <input id="howMany" type="number" name="howMany" value="1" min="1" max="20">
+        <input type="button" value="Number" onclick="msgNumber()">
+
+<canvas id="canvas" width="788" height="200"  style="position:absolute;top: 280px; left: 8px;">
+ Your browser does not support HTML5 Canvas.
+</canvas>
+
+
+
+
+
+<script type="text/javascript">
+
+function msgReset() {
+    if ($("#gameType").val() == "Regular")        
+        $.get("/info2",{index:2,gameType:1,code:$("#code").val()},successInfo);
+    else if ($("#gameType").val() == "4 Corners")        
+        $.get("/info2",{index:2,gameType:2,code:$("#code").val()},successInfo);
+    else if ($("#gameType").val() == "Ox")        
+        $.get("/info2",{index:2,gameType:3,code:$("#code").val()},successInfo);
+    else if ($("#gameType").val() == "2021")        
+        $.get("/info2",{index:2,gameType:4,code:$("#code").val()},successInfo);
+    else if ($("#gameType").val() == "ChunHoon")        
+        $.get("/info2",{index:2,gameType:5,code:$("#code").val()},successInfo);
+}
+function msgGameType() {
+        $.get("/info2",{index:8},successInfo);
+}
+function msgNumber() {
+        $.get("/info2",{index:3,howMany:$("#howMany").val()},successInfo);
+}
+function msgClear() {
+        $.get("/info2",{index:6},successInfo);
+}
+
+function successInfo(data) { 
+    if (!data)
+        return;   //error
+
+    if (data.val == 2) {
+//start a new game.       
+        globalVal = -1;
+        winnerName1 = "";
+        winnerName2 = "";
+        winnerName3 = "";
+        winnerName4 = "";
+        for (let i=0;i<numBalls;i++) {
+            cageReverse[i] = 0;
+        }
+    } else if (data.val == 3) {
+//get the new number chosen.        
+        globalVal = data.val;
+
+        howMany = data.howMany;
+        for (let i=0;i<data.howMany;i++) {
+            numbers[i] = data.numbers[i];
+            cageReverse[numbers[i]-1] = 1;
+        }
+
+//temp comment out below        
+//        if (data.ballNum != -1) {
+  //          cageReverse[data.ballNum-1] = 1;
+    //        mostRecentBall = data.ballNum-1;
+      //  }
+    } else if (data.val == 5) {
+//a new message was sent to the server.
+    } else if (data.val == 6) {
+//clear the messages.
+    } else if (data.val == 8) {
+//select a game type.
+    }
+
+}
+
+
+$(document).ready(function(){  
+
+
+//    $("#code").keydown( function( event ) {
+//        if ( event.which === 13 ) {
+//            if ($("#code").val() != "") {
+//                let codeSent = $("#code").val();
+//                $.get("/player2",{index:15,code:codeSent},successInfo);
+//            }
+//            // Disable sending the related form
+//            event.preventDefault();
+//            return false;
+//        }
+//    });
+
+
+});  
+    
+
+
+</script>
+
+  </body>
+</html>  
+  
+
+
+ 
